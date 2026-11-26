@@ -66,6 +66,38 @@ public class FinanceUseCase {
         return transactionRepository.save(transaction);
     }
 
+    public Transaction updateTransaction(
+            int transactionId,
+            int userId,
+            String description,
+            long amount,
+            TransactionType type,
+            String proofPath) {
+        validateUserId(userId);
+        if (transactionId <= 0) {
+            throw new ValidationException("ID transaksi tidak valid");
+        }
+
+        Transaction existing = transactionRepository
+                .findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Transaksi tidak ditemukan"));
+
+        String updatedProofPath = proofPath == null || proofPath.isBlank()
+                ? existing.getProofPath()
+                : proofPath;
+
+        Transaction updated = new Transaction(
+                existing.getId(),
+                userId,
+                description,
+                amount,
+                type,
+                updatedProofPath,
+                existing.getCreatedAt());
+
+        return transactionRepository.save(updated);
+    }
+
     public void deleteTransaction(int transactionId, int userId) {
         validateUserId(userId);
         if (transactionId <= 0) {

@@ -10,6 +10,7 @@ import org.delcom.ifs25025springbootcashflow.domain.PasswordHasher;
 import org.delcom.ifs25025springbootcashflow.domain.repository.IFinanceAiService;
 import org.delcom.ifs25025springbootcashflow.domain.repository.ITransactionRepository;
 import org.delcom.ifs25025springbootcashflow.domain.repository.IUserRepository;
+import org.delcom.ifs25025springbootcashflow.framework.auth.AuthSession;
 import org.delcom.ifs25025springbootcashflow.usecase.AuthUseCase;
 import org.delcom.ifs25025springbootcashflow.usecase.FinanceAiUseCase;
 import org.delcom.ifs25025springbootcashflow.usecase.FinanceUseCase;
@@ -55,6 +56,11 @@ public class AppConfig {
             @Value("${OPENAI_KEY}") String apiKey,
             @Value("${OPENAI_MODEL}") String model) {
         return new OpenAiFinanceService(endpoint, apiKey, model);
+    }
+
+    @Bean
+    public AuthSession authSession(IUserRepository userRepository) {
+        return new AuthSession(userRepository);
     }
 
     @Bean
