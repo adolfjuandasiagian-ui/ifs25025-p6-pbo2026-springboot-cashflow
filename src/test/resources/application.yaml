@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:cashflow_test;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+app:
+  upload-dir: target/test-uploads
+
+OPENAI_ENDPOINT: http://localhost/v1
+OPENAI_KEY: test-key
+OPENAI_MODEL: test-model
