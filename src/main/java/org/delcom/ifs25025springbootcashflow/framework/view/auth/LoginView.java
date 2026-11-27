@@ -15,10 +15,12 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 
 @Route("login")
 @PageTitle("Masuk | Cashflow")
-public class LoginView extends VerticalLayout {
+public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     private final AuthUseCase authUseCase;
     private final AuthSession authSession;
 
@@ -32,11 +34,14 @@ public class LoginView extends VerticalLayout {
 
         TextField usernameField = new TextField("Username");
         usernameField.setRequired(true);
+        usernameField.setId("login-username");
 
         PasswordField passwordField = new PasswordField("Password");
         passwordField.setRequired(true);
+        passwordField.setId("login-password");
 
         Button loginButton = new Button("Masuk");
+        loginButton.setId("login-submit");
         loginButton.addClickListener(event ->
                 login(usernameField.getValue(), passwordField.getValue()));
 
@@ -51,10 +56,17 @@ public class LoginView extends VerticalLayout {
                 registerLink);
     }
 
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (authSession.currentUser().isPresent()) {
+            event.forwardTo("");
+        }
+    }
+
     private void login(String username, String password) {
         try {
             authSession.login(authUseCase.login(username, password));
-            UI.getCurrent().navigate("cashflow");
+            UI.getCurrent().navigate("");
         } catch (DomainException exception) {
             Notification.show(exception.getMessage());
         }

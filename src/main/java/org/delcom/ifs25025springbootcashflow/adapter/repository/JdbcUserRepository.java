@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import org.delcom.ifs25025springbootcashflow.domain.entity.Role;
 import org.delcom.ifs25025springbootcashflow.domain.entity.User;
@@ -69,7 +70,7 @@ public class JdbcUserRepository implements IUserRepository {
             return statement;
         }, keyHolder);
 
-        Number generatedId = keyHolder.getKey();
+        Number generatedId = findGeneratedId(keyHolder);
         if (generatedId == null) {
             throw new IllegalStateException("Database tidak mengembalikan ID pengguna");
         }
@@ -121,5 +122,19 @@ public class JdbcUserRepository implements IUserRepository {
                 resultSet.getString("password_hash"),
                 resultSet.getString("profile_photo_path"),
                 Role.valueOf(resultSet.getString("role")));
+    }
+
+    private static Number findGeneratedId(KeyHolder keyHolder) {
+        Map<String, Object> keys = keyHolder.getKeys();
+        if (keys != null) {
+            Object id = keys.get("ID");
+            if (id == null) {
+                id = keys.get("id");
+            }
+            if (id instanceof Number number) {
+                return number;
+            }
+        }
+        throw new IllegalStateException("Database tidak mengembalikan ID pengguna");
     }
 }

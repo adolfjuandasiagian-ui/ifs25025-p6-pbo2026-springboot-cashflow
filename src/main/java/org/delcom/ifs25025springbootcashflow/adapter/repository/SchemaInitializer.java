@@ -1,12 +1,29 @@
 package org.delcom.ifs25025springbootcashflow.adapter.repository;
 
+import org.delcom.ifs25025springbootcashflow.domain.PasswordHasher;
+import org.delcom.ifs25025springbootcashflow.domain.entity.Role;
+import org.delcom.ifs25025springbootcashflow.domain.entity.User;
+import org.delcom.ifs25025springbootcashflow.domain.repository.IUserRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class SchemaInitializer {
     private final JdbcTemplate jdbcTemplate;
+    private final IUserRepository userRepository;
+    private final PasswordHasher passwordHasher;
+    private final String rootUsername;
+    private final String rootPassword;
 
-    public SchemaInitializer(JdbcTemplate jdbcTemplate) {
+    public SchemaInitializer(
+            JdbcTemplate jdbcTemplate,
+            IUserRepository userRepository,
+            PasswordHasher passwordHasher,
+            String rootUsername,
+            String rootPassword) {
         this.jdbcTemplate = jdbcTemplate;
+        this.userRepository = userRepository;
+        this.passwordHasher = passwordHasher;
+        this.rootUsername = rootUsername;
+        this.rootPassword = rootPassword;
     }
 
     public void initialize() {
@@ -35,5 +52,17 @@ public class SchemaInitializer {
                         FOREIGN KEY (user_id) REFERENCES users(id)
                 )
                 """);
+
+        if (rootUsername != null && !rootUsername.isBlank()
+                && rootPassword != null && !rootPassword.isBlank()
+                && userRepository.findByUsername(rootUsername.trim()).isEmpty()) {
+            userRepository.save(new User(
+                    0,
+                    rootUsername.trim(),
+                    "Administrator",
+                    passwordHasher.hash(rootPassword),
+                    null,
+                    Role.ADMIN));
+        }
     }
 }

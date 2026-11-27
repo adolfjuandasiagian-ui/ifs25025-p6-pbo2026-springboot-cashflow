@@ -1,6 +1,7 @@
 package org.delcom.ifs25025springbootcashflow.framework.view.auth;
 
 import org.delcom.ifs25025springbootcashflow.domain.exception.DomainException;
+import org.delcom.ifs25025springbootcashflow.framework.auth.AuthSession;
 import org.delcom.ifs25025springbootcashflow.usecase.AuthUseCase;
 
 import com.vaadin.flow.component.UI;
@@ -14,14 +15,20 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 
 @Route("register")
 @PageTitle("Daftar | Cashflow")
-public class RegisterView extends VerticalLayout {
+public class RegisterView extends VerticalLayout implements BeforeEnterObserver {
     private final AuthUseCase authUseCase;
+    private final AuthSession authSession;
 
-    public RegisterView(AuthUseCase authUseCase) {
+    public RegisterView(
+            AuthUseCase authUseCase,
+            AuthSession authSession) {
         this.authUseCase = authUseCase;
+        this.authSession = authSession;
 
         setSizeFull();
         setAlignItems(Alignment.CENTER);
@@ -75,6 +82,13 @@ public class RegisterView extends VerticalLayout {
             UI.getCurrent().navigate("login");
         } catch (DomainException exception) {
             Notification.show(exception.getMessage());
+        }
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (authSession.currentUser().isPresent()) {
+            event.forwardTo("");
         }
     }
 }

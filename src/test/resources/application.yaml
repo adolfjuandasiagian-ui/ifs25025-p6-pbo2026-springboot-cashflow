@@ -7,6 +7,8 @@ spring:
 
 app:
   upload-dir: target/test-uploads
+  root-username: admin
+  root-password: admin
 
 OPENAI_ENDPOINT: http://localhost/v1
 OPENAI_KEY: test-key

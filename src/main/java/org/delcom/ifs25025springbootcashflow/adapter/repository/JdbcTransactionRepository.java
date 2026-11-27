@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import org.delcom.ifs25025springbootcashflow.domain.entity.Transaction;
 import org.delcom.ifs25025springbootcashflow.domain.entity.TransactionType;
@@ -73,7 +74,7 @@ public class JdbcTransactionRepository implements ITransactionRepository {
             return statement;
         }, keyHolder);
 
-        Number generatedId = keyHolder.getKey();
+        Number generatedId = findGeneratedId(keyHolder);
         if (generatedId == null) {
             throw new IllegalStateException("Database tidak mengembalikan ID transaksi");
         }
@@ -149,5 +150,19 @@ public class JdbcTransactionRepository implements ITransactionRepository {
                 TransactionType.valueOf(resultSet.getString("type")),
                 resultSet.getString("proof_path"),
                 resultSet.getTimestamp("created_at").toLocalDateTime());
+    }
+
+    private static Number findGeneratedId(KeyHolder keyHolder) {
+        Map<String, Object> keys = keyHolder.getKeys();
+        if (keys != null) {
+            Object id = keys.get("ID");
+            if (id == null) {
+                id = keys.get("id");
+            }
+            if (id instanceof Number number) {
+                return number;
+            }
+        }
+        throw new IllegalStateException("Database tidak mengembalikan ID transaksi");
     }
 }

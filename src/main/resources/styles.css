@@ -1,0 +1,16 @@
+button, a, [role="tab"], [role="menuitem"], .cursor-pointer {
+    cursor: pointer;
+}
+
+button:disabled, [disabled] {
+    cursor: default;
+}
+
+vaadin-dialog-overlay::part(header) {
+    background: #2563EB;
+    color: white;
+}
+
+vaadin-dialog-overlay::part(footer) {
+    background: #F3F4F6;
+}

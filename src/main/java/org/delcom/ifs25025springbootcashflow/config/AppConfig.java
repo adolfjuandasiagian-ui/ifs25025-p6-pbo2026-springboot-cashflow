@@ -11,6 +11,7 @@ import org.delcom.ifs25025springbootcashflow.domain.repository.IFinanceAiService
 import org.delcom.ifs25025springbootcashflow.domain.repository.ITransactionRepository;
 import org.delcom.ifs25025springbootcashflow.domain.repository.IUserRepository;
 import org.delcom.ifs25025springbootcashflow.framework.auth.AuthSession;
+import org.delcom.ifs25025springbootcashflow.framework.view.LoadingIndicatorInitListener;
 import org.delcom.ifs25025springbootcashflow.usecase.AuthUseCase;
 import org.delcom.ifs25025springbootcashflow.usecase.FinanceAiUseCase;
 import org.delcom.ifs25025springbootcashflow.usecase.FinanceUseCase;
@@ -26,6 +27,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class AppConfig {
 
     @Bean
+    public LoadingIndicatorInitListener loadingIndicatorInitListener() {
+        return new LoadingIndicatorInitListener();
+    }
+
+    @Bean
     public PasswordHasher passwordHasher() {
         return new PasswordHasher();
     }
@@ -36,8 +42,18 @@ public class AppConfig {
     }
 
     @Bean(initMethod = "initialize")
-    public SchemaInitializer schemaInitializer(JdbcTemplate jdbcTemplate) {
-        return new SchemaInitializer(jdbcTemplate);
+    public SchemaInitializer schemaInitializer(
+            JdbcTemplate jdbcTemplate,
+            IUserRepository userRepository,
+            PasswordHasher passwordHasher,
+            @Value("${app.root-username}") String rootUsername,
+            @Value("${app.root-password}") String rootPassword) {
+        return new SchemaInitializer(
+                jdbcTemplate,
+                userRepository,
+                passwordHasher,
+                rootUsername,
+                rootPassword);
     }
 
     @Bean
