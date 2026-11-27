@@ -3,6 +3,8 @@ package org.delcom.ifs25025springbootcashflow.framework.view;
 import java.time.format.DateTimeFormatter;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletableFuture;
 
 import org.delcom.ifs25025springbootcashflow.adapter.presenter.FinancePresenter;
 import org.delcom.ifs25025springbootcashflow.domain.entity.SortOption;
@@ -32,6 +34,7 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -323,14 +326,27 @@ public class FinanceView extends VerticalLayout implements BeforeEnterObserver {
         process.addClickListener(event -> {
             progress.setVisible(true);
             process.setEnabled(false);
-            try {
-                preview.setItems(financeAiUseCase.generateTransactions(prompt.getValue()));
-            } catch (DomainException exception) {
-                Notification.show(exception.getMessage());
-            } finally {
-                progress.setVisible(false);
-                process.setEnabled(true);
-            }
+            UI ui = UI.getCurrent();
+            CompletableFuture
+                    .supplyAsync(() ->
+                            financeAiUseCase.generateTransactions(prompt.getValue()))
+                    .whenComplete((transactions, error) -> ui.access(() -> {
+                        if (error == null) {
+                            preview.setItems(transactions);
+                        } else {
+                            Throwable cause = error instanceof CompletionException
+                                    && error.getCause() != null
+                                            ? error.getCause()
+                                            : error;
+                            String message = cause instanceof DomainException
+                                    ? cause.getMessage()
+                                    : "Gagal memproses permintaan AI: "
+                                            + cause.getMessage();
+                            Notification.show(message);
+                        }
+                        progress.setVisible(false);
+                        process.setEnabled(true);
+                    }));
         });
 
         Button save = new Button("Simpan semua", event -> {
