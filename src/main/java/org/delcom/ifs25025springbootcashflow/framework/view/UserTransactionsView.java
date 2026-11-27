@@ -25,7 +25,6 @@ public class UserTransactionsView extends VerticalLayout implements BeforeEnterO
     private final AuthSession authSession;
     private final IUserRepository userRepository;
     private final FinanceUseCase financeUseCase;
-    private final FinancePresenter presenter;
     private final ComboBox<User> userFilter = new ComboBox<>("Pengguna");
     private final Grid<Transaction> grid = new Grid<>(Transaction.class, false);
 
@@ -37,8 +36,6 @@ public class UserTransactionsView extends VerticalLayout implements BeforeEnterO
         this.authSession = authSession;
         this.userRepository = userRepository;
         this.financeUseCase = financeUseCase;
-        this.presenter = presenter;
-
         userFilter.setItemLabelGenerator(User::getName);
         userFilter.addValueChangeListener(event -> refresh());
         grid.addColumn(Transaction::getId).setHeader("ID").setAutoWidth(true);

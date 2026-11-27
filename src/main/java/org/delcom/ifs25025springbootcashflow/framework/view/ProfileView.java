@@ -1,6 +1,7 @@
 package org.delcom.ifs25025springbootcashflow.framework.view;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.delcom.ifs25025springbootcashflow.adapter.storage.FileStorage;
 import org.delcom.ifs25025springbootcashflow.domain.entity.User;
@@ -16,22 +17,20 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLayout;
 
 @Route(value = "profile", layout = MainLayout.class)
 @PageTitle("Profil | Cashflow")
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
     private final AuthSession authSession;
     private final UserUseCase userUseCase;
-    private final FileStorage fileStorage;
     private final TextField nameField = new TextField("Nama");
     private final PasswordField passwordField = new PasswordField("Password baru");
-    private final MemoryBuffer photoBuffer = new MemoryBuffer();
+    private final AtomicReference<String> uploadedPhotoPath = new AtomicReference<>();
 
     public ProfileView(
             AuthSession authSession,
@@ -39,10 +38,13 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
             FileStorage fileStorage) {
         this.authSession = authSession;
         this.userUseCase = userUseCase;
-        this.fileStorage = fileStorage;
 
-        Upload photoUpload = new Upload(photoBuffer);
-        photoUpload.setAcceptedFileTypes("image/jpeg", "image/png", "image/gif", "image/webp");
+        Upload photoUpload = new Upload(UploadHandler.inMemory((metadata, bytes) ->
+                uploadedPhotoPath.set(fileStorage.store(
+                        metadata.fileName(),
+                        new ByteArrayInputStream(bytes)))));
+        photoUpload.setAcceptedMimeTypes(
+                "image/jpeg", "image/png", "image/gif", "image/webp");
         photoUpload.setMaxFiles(1);
 
         Button save = new Button("Simpan profil", event -> save());
@@ -63,11 +65,8 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
         User user = authSession.currentUser().orElseThrow();
         try {
             String photoPath = user.getProfilePhotoPath();
-            if (photoBuffer.getFileName() != null
-                    && !photoBuffer.getFileName().isBlank()) {
-                photoPath = fileStorage.store(
-                        photoBuffer.getFileName(),
-                        photoBuffer.getInputStream());
+            if (uploadedPhotoPath.get() != null) {
+                photoPath = uploadedPhotoPath.get();
             }
             userUseCase.updateProfile(
                     user.getId(),
@@ -75,7 +74,7 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
                     passwordField.getValue(),
                     photoPath);
             Notification.show("Profil berhasil diperbarui");
-        } catch (IOException | DomainException exception) {
+        } catch (DomainException exception) {
             Notification.show("Gagal memperbarui profil: " + exception.getMessage());
         }
     }

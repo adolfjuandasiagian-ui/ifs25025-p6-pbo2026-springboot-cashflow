@@ -1,10 +1,11 @@
 package org.delcom.ifs25025springbootcashflow.framework.view;
 
 import java.time.format.DateTimeFormatter;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.delcom.ifs25025springbootcashflow.adapter.presenter.FinancePresenter;
 import org.delcom.ifs25025springbootcashflow.domain.entity.SortOption;
@@ -31,7 +32,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -197,9 +198,12 @@ public class FinanceView extends VerticalLayout implements BeforeEnterObserver {
         typeField.setRequired(true);
         typeField.setWidthFull();
 
-        MemoryBuffer proofBuffer = new MemoryBuffer();
-        Upload proofUpload = new Upload(proofBuffer);
-        proofUpload.setAcceptedFileTypes(
+        AtomicReference<String> uploadedProofPath = new AtomicReference<>();
+        Upload proofUpload = new Upload(UploadHandler.inMemory((metadata, bytes) ->
+                uploadedProofPath.set(fileStorage.store(
+                        metadata.fileName(),
+                        new ByteArrayInputStream(bytes)))));
+        proofUpload.setAcceptedMimeTypes(
                 "image/jpeg", "image/png", "image/gif", "image/webp");
         proofUpload.setMaxFiles(1);
         proofUpload.setWidthFull();
@@ -209,28 +213,18 @@ public class FinanceView extends VerticalLayout implements BeforeEnterObserver {
             try {
                 long amount = Long.parseLong(amountField.getValue().trim());
 
-                String proofPath = null;
-                if (proofBuffer.getFileName() != null
-                        && !proofBuffer.getFileName().isBlank()) {
-                    proofPath = fileStorage.store(
-                            proofBuffer.getFileName(),
-                            proofBuffer.getInputStream());
-                }
-
                 financeUseCase.createTransaction(
                         currentUserId(),
                         descriptionField.getValue(),
                         amount,
                         typeField.getValue(),
-                        proofPath);
+                        uploadedProofPath.get());
 
                 dialog.close();
                 refreshData();
                 Notification.show("Transaksi berhasil ditambahkan");
             } catch (NumberFormatException exception) {
                 Notification.show("Jumlah harus berupa angka bulat");
-            } catch (IOException exception) {
-                Notification.show("Gagal menyimpan bukti: " + exception.getMessage());
             } catch (DomainException exception) {
                 Notification.show(exception.getMessage());
             }
