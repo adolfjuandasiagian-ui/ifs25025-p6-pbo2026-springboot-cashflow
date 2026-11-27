@@ -1,0 +1,7 @@
+.git
+.env
+.vscode
+target
+uploads
+node_modules
+src/main/frontend/generated
